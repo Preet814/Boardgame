@@ -12,15 +12,13 @@ spec:
       labels:
         app: boardgame
     spec:
+      serviceAccountName: jenkins-sa
       containers:
         - name: boardgame
-          
           image: 867344449786.dkr.ecr.ap-south-1.amazonaws.com/workshop/boardgame:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
-      imagePullSecrets:                     
-        - name: ecr-registry-secret
 ---
 apiVersion: v1
 kind: Service
