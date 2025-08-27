@@ -15,7 +15,7 @@ spec:
       serviceAccountName: jenkins-sa
       containers:
         - name: boardgame
-          image: 867344449786.dkr.ecr.ap-south-1.amazonaws.com/workshop/boardgame:latest
+          image: ECR_REGISTRY/ECR_REPO:BUILD_ID
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
