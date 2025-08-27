@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: boardgame-deployment
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: boardgame
@@ -26,6 +26,7 @@ metadata:
   name: boardgame-ssvc
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-0d4abde29fa4fe1e6"
 spec:
   selector:
     app: boardgame
