@@ -107,6 +107,16 @@ pipeline {
                 ] | @csv' trivy-report-${env.BUILD_NUMBER}.json > trivy-report-${env.BUILD_NUMBER}.csv || true
                 """
             }
+            post {
+                success {
+                    emailext (
+                        subject: "Trivy Scan Report - Build #${BUILD_NUMBER}",
+                        body: "Attached is the Trivy vulnerability scan report for build #${BUILD_NUMBER}.",
+                        to: "preetmundra814@gmail.com",
+                        attachmentsPattern: "trivy-report-${BUILD_NUMBER}.csv"
+                    )
+                }
+            }
         }
 
         stage('Push to ECR') {
