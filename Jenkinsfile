@@ -22,12 +22,7 @@ pipeline {
     }
 
     stages {
-        // stage('Checkout') {
-        //     steps {
-        //         git branch: 'main', url: 'https://github.com/Preet814/Boardgame.git'
-        //     }
-        // }
-
+        
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {  
@@ -93,8 +88,38 @@ pipeline {
                         docker build -t ${IMAGE_NAME}:${env.BUILD_NUMBER} .
 
                         # Run Trivy scan (report only, do not fail pipeline)
-                        trivy image --severity HIGH,CRITICAL ${IMAGE_NAME}:${env.BUILD_NUMBER} > trivy-report.txt || true
+                        trivy image --format json --output trivy-report-${env.BUILD_NUMBER}.json ${IMAGE_NAME}:${env.BUILD_NUMBER} || true
                     """
+                }
+            }
+        }
+
+        stage('Convert report to CSV') {
+            steps {
+                sh """
+                jq -r '.Results[]?.Vulnerabilities[]? | [
+                        .VulnerabilityID,
+                        .PkgName,
+                        .InstalledVersion,
+                        .FixedVersion,
+                        .Severity,
+                        .Title
+                ] | @csv' trivy-report-${env.BUILD_NUMBER}.json > trivy-report-${env.BUILD_NUMBER}.csv || true
+                """
+            }
+            post {
+                success {
+                    script {
+                        def trivyCSVFile = "trivy-report-${env.BUILD_NUMBER}.csv"
+                        def trivyCSV = fileExists(trivyCSVFile) ? readFile(trivyCSVFile) : 'No Trivy report generated.'
+                        
+                        mail to: 'preetmundra814@gmail.com',
+                            subject: "Trivy Scan Report - Build #${BUILD_NUMBER}",
+                            body: """
+            Trivy CSV Report for build ${BUILD_NUMBER}:
+            ${trivyCSV}
+            """
+                    }
                 }
             }
         }
@@ -143,7 +168,6 @@ pipeline {
     post {
         failure {
             script {
-                def trivyReport = fileExists('trivy-report.txt') ? readFile('trivy-report.txt') : 'No Trivy report generated.'
                 mail to: 'preetmundra814@gmail.com',
                     subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: """Build failed for job: ${env.JOB_NAME}
@@ -151,15 +175,11 @@ pipeline {
 
     Check logs: ${env.BUILD_URL}
     Blue Ocean: ${env.RUN_DISPLAY_URL}
-
-    Trivy Report:
-    ${trivyReport}
     """
             }
         }
         success {
             script {
-                def trivyReport = fileExists('trivy-report.txt') ? readFile('trivy-report.txt') : 'No Trivy report generated.'
                 mail to: 'preetmundra814@gmail.com',
                     subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: """Build successful for job: ${env.JOB_NAME}
@@ -167,9 +187,6 @@ pipeline {
 
     Check details: ${env.BUILD_URL}
     Blue Ocean: ${env.RUN_DISPLAY_URL}
-
-    Trivy Report:
-    ${trivyReport}
     """
             }
         }
