@@ -22,11 +22,11 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/Preet814/Boardgame.git'
-            }
-        }
+        // stage('Checkout') {
+        //     steps {
+        //         git branch: 'main', url: 'https://github.com/Preet814/Boardgame.git'
+        //     }
+        // }
 
         stage('SonarQube Analysis') {
             steps {
