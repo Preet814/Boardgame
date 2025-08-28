@@ -107,21 +107,6 @@ pipeline {
                 ] | @csv' trivy-report-${env.BUILD_NUMBER}.json > trivy-report-${env.BUILD_NUMBER}.csv || true
                 """
             }
-            post {
-                success {
-                    script {
-                        def trivyCSVFile = "trivy-report-${env.BUILD_NUMBER}.csv"
-                        def trivyCSV = fileExists(trivyCSVFile) ? readFile(trivyCSVFile) : 'No Trivy report generated.'
-                        
-                        mail to: 'preetmundra814@gmail.com',
-                            subject: "Trivy Scan Report - Build #${BUILD_NUMBER}",
-                            body: """
-            Trivy CSV Report for build ${BUILD_NUMBER}:
-            ${trivyCSV}
-            """
-                    }
-                }
-            }
         }
 
         stage('Push to ECR') {
@@ -168,6 +153,9 @@ pipeline {
     post {
         failure {
             script {
+                def trivyCSVFile = "trivy-report-${env.BUILD_NUMBER}.csv"
+                def trivyCSV = fileExists(trivyCSVFile) ? readFile(trivyCSVFile) : 'No Trivy report generated.'
+                
                 mail to: 'preetmundra814@gmail.com',
                     subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: """Build failed for job: ${env.JOB_NAME}
@@ -175,18 +163,27 @@ pipeline {
 
     Check logs: ${env.BUILD_URL}
     Blue Ocean: ${env.RUN_DISPLAY_URL}
+
+    Trivy CSV Report:
+    ${trivyCSV}
     """
             }
         }
         success {
             script {
+                def trivyCSVFile = "trivy-report-${env.BUILD_NUMBER}.csv"
+                def trivyCSV = fileExists(trivyCSVFile) ? readFile(trivyCSVFile) : 'No Trivy report generated.'
+                
                 mail to: 'preetmundra814@gmail.com',
                     subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: """Build successful for job: ${env.JOB_NAME}
     Build number: ${env.BUILD_NUMBER}
 
-    Check details: ${env.BUILD_URL}
+    Check logs: ${env.BUILD_URL}
     Blue Ocean: ${env.RUN_DISPLAY_URL}
+
+    Trivy CSV Report:
+    ${trivyCSV}
     """
             }
         }
